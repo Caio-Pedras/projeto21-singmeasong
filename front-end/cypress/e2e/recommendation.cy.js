@@ -1,7 +1,7 @@
 // <reference type ="cypress" />
 const RECOMMENDATION = {
   name: "Mock song",
-  link: "https://www.youtube.com/watch?v=Dst9gZkq1a8",
+  link: "https://www.youtube.com/watch?v=tfSS1e3kYeo",
 };
 const DELETE_DOWNVOTE_NUMBER = 6;
 describe("Recommendation tests", () => {
