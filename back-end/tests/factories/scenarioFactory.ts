@@ -34,7 +34,7 @@ export async function createAnyNumberScoredRecommendationScenario(
 ) {
   const recomendations = [];
   for (let i = 0; i < NUMBER_OF_RECOMMENDATIONS; i++) {
-    const score = Math.floor(Math.random() * (200 - 10) + 10);
+    const score = Math.floor(Math.random() * 100);
     const recommendation = { ...recommendationFactory(), score };
     recomendations.push(recommendation);
     await createScoredRecommendation(recommendation);
