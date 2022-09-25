@@ -116,3 +116,118 @@ describe("Post votes on recommendation tests", () => {
     });
   });
 });
+
+describe("Get recommendations tests", () => {
+  it("Get all recommendations", async () => {
+    const recommendation = recommendationFactory();
+    jest
+      .spyOn(recommendationRepository, "findAll")
+      .mockImplementationOnce((): any => {
+        return [recommendation];
+      });
+    const response = await recommendationService.get();
+    expect(recommendationRepository.findAll).toBeCalled();
+    expect(response).toEqual([recommendation]);
+  });
+  it("Return the informed amount of recommendations order by score", async () => {
+    let recommendations = [];
+    for (let i = 0; i < 3; i++) {
+      const recommendation = recommendationFactory();
+      recommendations.push({ ...recommendation, id: i + 1, score: i });
+    }
+    jest
+      .spyOn(recommendationRepository, "getAmountByScore")
+      .mockImplementationOnce((): any => {
+        return recommendations;
+      });
+    const response = await recommendationService.getTop(10);
+    expect(response).toEqual(recommendations.reverse());
+    expect(recommendationRepository.getAmountByScore).toBeCalled();
+  });
+
+  it("Get recommendation by Id", async () => {
+    const recommendation = { ...recommendationFactory(), id: 1, score: 0 };
+    jest
+      .spyOn(recommendationRepository, "find")
+      .mockImplementationOnce((): any => {
+        return recommendation;
+      });
+    const response = await recommendationService.getById(recommendation.id);
+    expect(response).toEqual(recommendation);
+    expect(recommendationRepository.find).toBeCalled();
+  });
+  it("Get recommendation by id error", async () => {
+    jest
+      .spyOn(recommendationRepository, "find")
+      .mockImplementationOnce((): any => {});
+    const response = recommendationService.getById(1);
+    expect(response).rejects.toEqual({
+      message: "",
+      type: "not_found",
+    });
+  });
+});
+
+describe("Get random recommendations", () => {
+  it("Get randon recommendation 70% scenario", async () => {
+    let recommendations = [];
+    for (let i = 0; i < 3; i++) {
+      const recommendation = recommendationFactory();
+      recommendations.push({ ...recommendation, id: i + 1, score: i * 10 });
+    }
+    const chance = 0.6;
+    jest.spyOn(Math, "random").mockImplementationOnce((): any => {
+      return chance;
+    });
+    jest
+      .spyOn(recommendationRepository, "findAll")
+      .mockImplementationOnce((): any => {
+        return [recommendations[2]];
+      });
+    const response = await recommendationService.getRandom();
+    expect(Math.random).toBeCalled();
+    expect(recommendationRepository.findAll).toBeCalledWith({
+      score: 10,
+      scoreFilter: "gt",
+    });
+    expect(response.score).toBeGreaterThan(10);
+  });
+
+  it("Get randon recommendation 30% scenario", async () => {
+    let recommendations = [];
+    for (let i = 0; i < 3; i++) {
+      const recommendation = recommendationFactory();
+      recommendations.push({ ...recommendation, id: i + 1, score: i * 10 });
+    }
+    const chance = 0.8;
+    jest.spyOn(Math, "random").mockImplementationOnce((): any => {
+      return chance;
+    });
+    jest
+      .spyOn(recommendationRepository, "findAll")
+      .mockImplementationOnce((): any => {
+        return [recommendations[0]];
+      });
+    const response = await recommendationService.getRandom();
+    expect(Math.random).toBeCalled();
+    expect(recommendationRepository.findAll).toBeCalledWith({
+      score: 10,
+      scoreFilter: "lte",
+    });
+    expect(response.score).toBeLessThanOrEqual(10);
+  });
+  it("Get randon recommendation with empty database", async () => {
+    const recommendations = [];
+    jest
+      .spyOn(recommendationRepository, "findAll")
+      .mockImplementation((): any => {
+        return recommendations;
+      });
+
+    const response = recommendationService.getRandom();
+    expect(response).rejects.toEqual({
+      type: "not_found",
+      message: "",
+    });
+  });
+});
