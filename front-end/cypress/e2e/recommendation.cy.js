@@ -1,8 +1,6 @@
 // <reference type ="cypress" />
-const RECOMMENDATION = {
-  name: "Mock song",
-  link: "https://www.youtube.com/watch?v=tfSS1e3kYeo",
-};
+import recommendationFactory from "../../../back-end/tests/factories/recommendationFactory";
+const RECOMMENDATION = recommendationFactory();
 const DELETE_DOWNVOTE_NUMBER = 6;
 describe("Recommendation tests", () => {
   it("Create a recommendation", () => {
@@ -10,7 +8,7 @@ describe("Recommendation tests", () => {
     cy.visit("http://localhost:3000");
     cy.get("input[placeholder='Name']").type(RECOMMENDATION.name);
     cy.get("input[placeholder='https://youtu.be/...']").type(
-      RECOMMENDATION.link
+      RECOMMENDATION.youtubeLink
     );
     cy.intercept("POST", "http://localhost:5000/recommendations").as(
       "createRecommendation"
@@ -22,7 +20,7 @@ describe("Recommendation tests", () => {
   it("Create a recommendation that already exists", () => {
     cy.get("input[placeholder='Name']").type(RECOMMENDATION.name);
     cy.get("input[placeholder='https://youtu.be/...']").type(
-      RECOMMENDATION.link
+      RECOMMENDATION.youtubeLink
     );
     cy.intercept("POST", "http://localhost:5000/recommendations").as(
       "createRecommendation"
@@ -50,4 +48,41 @@ describe("Votes tests", () => {
     }
     cy.contains("No recommendations yet! Create your own :)");
   });
+});
+
+describe("Menu buttons tests", () => {
+  it("fill tests", () => {
+    for (let i = 0; i < 3; i++) {
+      const testRecommendation = recommendationFactory();
+      cy.get("input[placeholder='Name']").type(testRecommendation.name);
+      cy.get("input[placeholder='https://youtu.be/...']").type(
+        testRecommendation.youtubeLink
+      );
+      cy.intercept("POST", "http://localhost:5000/recommendations").as(
+        "createRecommendation"
+      );
+      cy.get("button").click();
+      cy.wait("@createRecommendation");
+      for (let j = i; j < 3; j++) {
+        cy.get(".upArrow").first().click();
+      }
+    }
+  });
+  it("tests top button", () => {
+    cy.get(".top").click();
+    cy.get(".likeBar").first().contains("4");
+    cy.url().should("eq", "http://localhost:3000/top");
+  });
+  it("tests random button", () => {
+    cy.get(".random").click();
+    cy.get("article").should("have.length", 1);
+    cy.url().should("eq", "http://localhost:3000/random");
+  });
+  it("tests home button", () => {
+    cy.get(".home").click();
+    cy.url().should("eq", "http://localhost:3000/");
+  });
+});
+after(() => {
+  cy.request("DELETE", "http://localhost:5000/reset");
 });
